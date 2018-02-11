@@ -1,0 +1,180 @@
+-- Compte rendu du TME 1-2 sur les plan d'exécution
+-- ================================================
+
+-- NOM, Prénom: BALDE, Ahmed Tidiane
+-- Numéro étudiant : 3502264
+
+
+-- Question préliminaire: Statistiques sur les tables
+-- ==================================================
+
+    ===========
+    =-Requête-=
+    ===========
+
+explain plan for
+    select * from Annuaire;
+@p3
+
+SQL>
+----------------------------------------------
+| Id  | Operation	  | Name     | Rows  |
+----------------------------------------------
+|   0 | SELECT STATEMENT  |	     |	2000 |
+|   1 |  TABLE ACCESS FULL| ANNUAIRE |	2000 |
+----------------------------------------------
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - "ANNUAIRE"."NOM"[VARCHAR2,30], "ANNUAIRE"."PRENOM"[VARCHAR2,30],
+       "ANNUAIRE"."AGE"[NUMBER,22], "ANNUAIRE"."CP"[NUMBER,22],
+       "ANNUAIRE"."TEL"[VARCHAR2,10], "ANNUAIRE"."PROFIL"[VARCHAR2,1500]
+       
+    ===========
+    =-Réponse-=
+    ===========
+@p4, ajoute le coût, @p5 ajoute les détails tel que le temps que prends
+la réquête à être exécuté.
+
+-- =================================
+-- Exercice 1 : Sélection avec index
+-- =================================
+
+    ===========
+--a)=-Requête-=
+    ===========
+
+explain plan for
+    select a.nom, a.prenom
+    from BigAnnuaire a
+    where a.age = 18;
+@p3
+
+SQL> 
+-----------------------------------------------------------
+| Id  | Operation		    | Name	  | Rows  |
+-----------------------------------------------------------
+|   0 | SELECT STATEMENT	    |		  |  2200 |
+|   1 |  TABLE ACCESS BY INDEX ROWID| BIGANNUAIRE |  2200 |
+|*  2 |   INDEX RANGE SCAN	    | INDEXAGE	  |  2200 |
+-----------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - access("A"."AGE"=18)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+   2 - "A".ROWID[ROWID,10]
+
+    ===========
+    =-Réponse-=
+    ===========
+listeRowIDs = IndexAge.getRowIDs(18)
+for (RowID r : listeRowIDs) {
+    p = Personne.lireTuple(r)
+    afficher(p.nom, p.prenom)
+}
+
+    ===========
+--d)=-Requête-=
+    ===========
+explain plan for
+   select a.nom, a.prenom
+   from BigAnnuaire a
+   where a.age < 70 and (a.cp = 93000 or a.cp = 75000);
+@p3
+
+SQL>
+------------------------------------------------------------
+| Id  | Operation		     | Name	   | Rows  |
+------------------------------------------------------------
+|   0 | SELECT STATEMENT	     |		   |   307 |
+|   1 |  INLIST ITERATOR	     |		   |	   |
+|*  2 |   TABLE ACCESS BY INDEX ROWID| BIGANNUAIRE |   307 |
+|*  3 |    INDEX RANGE SCAN	     | INDEXCP	   |   440 |
+------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - filter("A"."AGE"<70)
+   3 - access("A"."CP"=75000 OR "A"."CP"=93000)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+   2 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+   3 - "A".ROWID[ROWID,10]
+       
+    ===========
+    =-Réponse-=
+    ===========
+
+for c in (75000, 93000):
+    listeRowIDs = IndexCP.getRowIDs(c)
+    for (r in listeRowIDs):
+        p = Personne.lireTuple(r)
+        if (p.getAge() < 70)
+           afficher(p.nom, p.prenom)
+
+
+    ===========
+--d)=-Requête-=
+    ===========
+explain plan for
+    select a.nom, a.prenom
+    from BigAnnuaire a
+    where a.age = 20 and a.cp = 13000 and a.nom like 'T%';
+@p3
+
+SQL>
+----------------------------------------------------------------
+| Id  | Operation			 | Name        | Rows  |
+----------------------------------------------------------------
+|   0 | SELECT STATEMENT		 |	       |     1 |
+|*  1 |  TABLE ACCESS BY INDEX ROWID	 | BIGANNUAIRE |     1 |
+|   2 |   BITMAP CONVERSION TO ROWIDS	 |	       |       |
+|   3 |    BITMAP AND			 |	       |       |
+|   4 |     BITMAP CONVERSION FROM ROWIDS|	       |       |
+|*  5 |      INDEX RANGE SCAN		 | INDEXCP     |   220 |
+|   6 |     BITMAP CONVERSION FROM ROWIDS|	       |       |
+|*  7 |      INDEX RANGE SCAN		 | INDEXAGE    |   220 |
+----------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - filter("A"."NOM" LIKE 'T%')
+   5 - access("A"."CP"=13000)
+   7 - access("A"."AGE"=20)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+   2 - "A".ROWID[ROWID,10]
+   3 - STRDEF[BM VAR, 10], STRDEF[BM VAR, 10], STRDEF[BM VAR, 32496]
+   4 - STRDEF[BM VAR, 10], STRDEF[BM VAR, 10], STRDEF[BM VAR, 32496]
+   5 - "A".ROWID[ROWID,10]
+   6 - STRDEF[BM VAR, 10], STRDEF[BM VAR, 10], STRDEF[BM VAR, 32496]
+   7 - "A".ROWID[ROWID,10]
+
+    ===========
+    =-Réponse-=
+    ===========
+
+setRowIDsAge = set(IndexAge.getRowIDs(20))
+setRowIDsCP = set(IndexCP.getRows(13000))
+setRowIDs = setRowIDsAge & setRowIDsCP
+for r in setRowIDs:
+    p = Personne.lireTuple(r)
+    if (p.nom).startswith('T'):
+        afficher(p.nom)
+
+
