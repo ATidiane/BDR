@@ -108,7 +108,7 @@ explain plan for
 explain plan for
     select a.nom, a.prenom
     from BigAnnuaire a
-    where a.age <= 10;
+    where a.age <= 30;
 @p4
 
 --COMPLETER
@@ -120,7 +120,7 @@ explain plan for
 explain plan for
     select a.nom, a.prenom
     from BigAnnuaire a
-    where a.cp BETWEEN 50000 AND COMPLETER;
+    where a.cp BETWEEN 50000 AND 81916;
 @p4
 
 
@@ -129,7 +129,7 @@ explain plan for
 -- Exercice 3. Comparaison de plans d'exécutions équivalents
 -- =========================================================
 explain plan for
-   SELECT /*+  index( a IndexAge) */  a.nom, a.prenom 
+   SELECT  /*+ index( a IndexAge) */   a.nom, a.prenom 
    FROM BigAnnuaire a WHERE a.age < 7;
 @p4
 
@@ -141,6 +141,17 @@ explain plan for
 
 
 -- b)
+
+explain plan for
+   SELECT  /*+ index( a IndexAge) */   a.nom, a.prenom 
+   FROM BigAnnuaire a WHERE a.age > 19;
+@p4
+
+
+explain plan for
+   SELECT /*+  no_index( a IndexAge) */   a.nom, a.prenom
+   FROM BigAnnuaire a WHERE a.age > 19;
+@p4
 
 
 

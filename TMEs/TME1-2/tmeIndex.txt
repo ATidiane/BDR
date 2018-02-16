@@ -8,6 +8,11 @@
 -- Question préliminaire: Statistiques sur les tables
 -- ==================================================
 
+===============================================================================
+=---------------------------------Exercice 1----------------------------------=
+===============================================================================
+
+
     ===========
     =-Requête-=
     ===========
@@ -178,3 +183,192 @@ for r in setRowIDs:
         afficher(p.nom)
 
 
+===============================================================================
+=---------------------------------Exercice 2----------------------------------=
+===============================================================================
+A noter qu'il n'exécute pas vraiment la requête, il estime que le coût serait
+tel ou tel.
+
+Question a:
+===========
+
+Prédicat    Rows       Index Utilisé     Coût
+==============================================
+age <= 10   22250      Oui               22250
+age <= 30   66644      Oui               66793
+age <= 40   88867      Non               70893
+age <= 60   133K       Non               70893
+age <= 80   177K       Non               70893
+
+
+Question b:
+===========
+Oracle préfère evaluer la requête sans utiliser l'indexAge pour les trois
+derniers prédicats, car il ne sert à rien d'utiliser l'index pour accéder à la
+presque totalité de la base de donnée.
+Le coût de la lecture de toute la base est de 70893. A chaque fois oracle compare
+donc le cout d'accès s'il avait utilisé l'index qui est à peu près égal, un peu
+supérieur parfois au nombre de Rows.
+
+Question c:
+===========
+BETWEEN 50000 et N: avec N égal à exactement 81916
+
+
+===============================================================================
+=---------------------------------Exercice 3----------------------------------=
+===============================================================================
+
+Question a:
+===========
+
+Prédicat    Rows       Index Utilisé     Coût
+==============================================
+age <= 7    13333      Oui               13365
+age <= 7    13333      Non               70893
+
+
+Question b:
+===========
+
+Prédicat    Rows       Index Utilisé     Coût
+==============================================
+age > 19    180K       Oui               180K
+age > 19    180K       Non               70893
+
+
+Question c:
+===========
+
+index_combine(a indexCp indexAge) : force à utiliser plusieurs indexs ensemble.
+Contrairement à index(..., ...) qui en utilise un, le meilleur.
+
+
+===============================================================================
+=---------------------------------Exercice 3----------------------------------=
+===============================================================================
+Question a:
+===========
+SQL>
+---------------------------------------------------------
+| Id  | Operation		     | Name	| Rows	|
+---------------------------------------------------------
+|   0 | SELECT STATEMENT	     |		|    20 |
+|*  1 |  HASH JOIN		     |		|    20 |
+|   2 |   TABLE ACCESS BY INDEX ROWID| ANNUAIRE |    20 |
+|*  3 |    INDEX RANGE SCAN	     | INDEXAGE |    20 |
+|   4 |   TABLE ACCESS FULL	     | VILLE	|  1000 |
+---------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - access("A"."CP"="V"."CP")
+   3 - access("A"."AGE"=18)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - (#keys=1) "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30],
+       "V"."VILLE"[VARCHAR2,30]
+   2 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30],
+       "A"."CP"[NUMBER,22]
+   3 - "A".ROWID[ROWID,10]
+   4 - "V"."VILLE"[VARCHAR2,30], "V"."CP"[NUMBER,22]
+
+Dessin de l'arbre:
+==================
+                0
+                |
+                1
+            |       |
+            *2      4
+            |
+            *3 Age=18
+
+Pour le pseudo-code, il faut utiliser:
+======================================
+INDEX.getRowIds(condition)
+TABLE.getTuple(rowId)
+     .fullScan()
+
+
+Pseudo-code:
+============
+MAP<Int, List<(String), (String)> m
+foreach(r: INDEXAge.getRowides(age=18)) {
+    t = ANNUAIRE.getTuple(r)
+    m.put(t.cp, (t.nom, t.prenom))
+    # peut s'écrire
+}
+foreach(v: VILLE.fullScan()) {
+    # m.get : obtenir les (noms, prenoms) de la MAP m, étape de jointure
+    foreach(p: m.get(v.cp)) {
+        affiche(p.nom, p.prenom, v.ville)
+    }
+}
+
+Il faut retenir qu'il faut séparer l'étape de la jointure m.get(v.cp) et
+l'étape de la création de la table de hachage (TAP)
+La jointure par hashage dit, avant d'évaluer un noeud, on descend en bas à
+gauche.
+
+On range les personnes qui ont 18 ans dan une table de hachage
+
+
+Question b:
+===========
+SQL>
+
+                0
+                |
+                1
+            |       |
+            2       3
+      FULL VILLE    |
+                    4
+                    INDEX AGE
+
+Pseudo-code:
+============
+foreach(v: VILLE.fullscan() {
+    ajouter(v.cp, v.ville) dans MAP
+}
+
+foreach(r: INDEXAGE.getRowIds(18)) {
+    t = ANNUAIRE.getTuple(r)
+    afficher(t.nom, t.prenom, MAP.get(t.cp))
+}
+
+On indexe toutes les villes (car il y'a plus de personnes ayant plus de 18 ans
+est bien plus grand que le nombre de villes) par leur code postale et ensuite
+pour chaque personne ayant 18 ans, on 
+
+
+Question c:
+===========
+# Pour la semaine prochaine, venir avec l'algo du petit c)
+SQL>
+
+                0
+                |
+                1
+            |       |
+            2       5 BIGANNUAIRE BY ROWID
+         |     |
+ VILLE FULL  BIGANNUAIRE
+             INDEXCP   
+
+Pseudo-code:
+============
+
+
+Ce sont les étapes au niveau des feuilles qui sont les étapes englobantes.
+
+
+Pour chaque ville on fait une boucle qui fera une boucle pour récuperer les
+personnes.
+Maintenant qu'on a le rowid on va aller lire dans BIGANNUAIRE
+
+# Faire
+Préciser ce qu'on garde au niveau des attributs.
