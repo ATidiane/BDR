@@ -201,10 +201,73 @@ explain plan for
 
 -- voir les requetes sur l'énoncé en ligne
 
+--a) Requête avec group by
+EXPLAIN plan FOR
+    SELECT age, COUNT(*)
+    FROM BigAnnuaire a
+    GROUP BY age;
+@p3
 
 
+--b) Requête avec group by having
+EXPLAIN plan FOR
+    SELECT age, COUNT(*)
+    FROM BigAnnuaire a
+    GROUP BY age
+    HAVING COUNT(*) > 200;
+@p3
 
 
+--c) Requête min max
+EXPLAIN plan FOR
+    SELECT MIN(cp), MAX(cp)
+    FROM BigAnnuaire a;
+@p3
+
+
+--d) Requête avec not in
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE a.prenom NOT IN ( SELECT b.prenom
+                            FROM BigAnnuaire b
+                            WHERE b.age<=7);
+@p3
+
+
+--e) Requête avec not exists
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE NOT EXISTS ( SELECT *
+                       FROM BigAnnuaire b
+                       WHERE b.prenom = a.prenom
+                       AND b.age < a.age);
+@p3
+
+
+--f) Requête avec minus : les codes postaux des villes qui n'ont pas de centenaire.
+EXPLAIN plan FOR
+    SELECT cp
+    FROM BigAnnuaire a
+    minus
+    SELECT cp
+    FROM BigAnnuaire b
+    WHERE b.age>=100;
+@p3
+
+
+--g) requête avec where age >= ALL (…)
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE a.age >= ALL (SELECT b.age
+                       FROM BigAnnuaire b
+                       WHERE b.cp = 75000);
+@p3
+
+
+--h) Requete avec UNION, avec UNION ALL, avec une division, … (no request giving)
 
 
 
