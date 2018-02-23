@@ -274,7 +274,7 @@ EXPLAIN plan FOR
 -- Exercice 6: Documentation et Requetes sur le catalogue
 -- ======================================================
 COLUMN TABLE_NAME format A20
-SELECT TABLE_NAME, blocks, num_rows 
+SELECT TABLE_NAME, blocks, num_rows as cardinalite
 FROM user_tables;
 
 
@@ -292,3 +292,322 @@ avg_leaf_blocks_per_key, avg_data_blocks_per_key
 from all_indexes
 where table_name = 'BIGANNUAIRE';
 
+
+--Décrit le domaine de chaque attribut
+COLUMN TABLE_NAME format A20
+    COLUMN column_name format A20
+    SELECT TABLE_NAME, column_name, utl_raw.cast_to_number(low_value) AS borneInf,  utl_raw.cast_to_number(high_value) AS borneSup, num_distinct, histogram
+    FROM user_tab_cols
+    WHERE data_type = 'NUMBER';
+-- Exercice 5: Autres Requetes 
+-- ===========================
+
+-- voir les requetes sur l'énoncé en ligne
+
+--a) Requête avec group by
+EXPLAIN plan FOR
+    SELECT age, COUNT(*)
+    FROM BigAnnuaire a
+    GROUP BY age;
+@p3
+
+
+--b) Requête avec group by having
+EXPLAIN plan FOR
+    SELECT age, COUNT(*)
+    FROM BigAnnuaire a
+    GROUP BY age
+    HAVING COUNT(*) > 200;
+@p3
+
+
+--c) Requête min max
+EXPLAIN plan FOR
+    SELECT MIN(cp), MAX(cp)
+    FROM BigAnnuaire a;
+@p3
+
+
+--d) Requête avec not in
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE a.prenom NOT IN ( SELECT b.prenom
+                            FROM BigAnnuaire b
+                            WHERE b.age<=7);
+@p3
+
+
+--e) Requête avec not exists
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE NOT EXISTS ( SELECT *
+                       FROM BigAnnuaire b
+                       WHERE b.prenom = a.prenom
+                       AND b.age < a.age);
+@p3
+
+
+--f) Requête avec minus : les codes postaux des villes qui n'ont pas de centenaire.
+EXPLAIN plan FOR
+    SELECT cp
+    FROM BigAnnuaire a
+    minus
+    SELECT cp
+    FROM BigAnnuaire b
+    WHERE b.age>=100;
+@p3
+
+
+--g) requête avec where age >= ALL (…)
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE a.age >= ALL (SELECT b.age
+                       FROM BigAnnuaire b
+                       WHERE b.cp = 75000);
+@p3
+
+
+--h) Requete avec UNION, avec UNION ALL, avec une division, … (no request giving)
+
+
+
+-- Exercice 6: Documentation et Requetes sur le catalogue
+-- ======================================================
+COLUMN TABLE_NAME format A20
+SELECT TABLE_NAME, blocks, num_rows as cardinalite
+FROM user_tables;
+
+
+-- info sur la taille des index
+column table_name format A10
+column index_name format A10
+--
+select table_name, index_name, blevel, distinct_keys, leaf_blocks,
+avg_leaf_blocks_per_key, avg_data_blocks_per_key
+from user_indexes
+where table_name = 'ANNUAIRE';
+
+select table_name, index_name, blevel, distinct_keys, leaf_blocks,
+avg_leaf_blocks_per_key, avg_data_blocks_per_key
+from all_indexes
+where table_name = 'BIGANNUAIRE';
+
+
+--Décrit le domaine de chaque attribut
+COLUMN TABLE_NAME format A20
+    COLUMN column_name format A20
+    SELECT TABLE_NAME, column_name, utl_raw.cast_to_number(low_value) AS borneInf,  utl_raw.cast_to_number(high_value) AS borneSup, num_distinct, histogram
+    FROM user_tab_cols
+    WHERE data_type = 'NUMBER';
+-- Exercice 5: Autres Requetes 
+-- ===========================
+
+-- voir les requetes sur l'énoncé en ligne
+
+--a) Requête avec group by
+EXPLAIN plan FOR
+    SELECT age, COUNT(*)
+    FROM BigAnnuaire a
+    GROUP BY age;
+@p3
+
+
+--b) Requête avec group by having
+EXPLAIN plan FOR
+    SELECT age, COUNT(*)
+    FROM BigAnnuaire a
+    GROUP BY age
+    HAVING COUNT(*) > 200;
+@p3
+
+
+--c) Requête min max
+EXPLAIN plan FOR
+    SELECT MIN(cp), MAX(cp)
+    FROM BigAnnuaire a;
+@p3
+
+
+--d) Requête avec not in
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE a.prenom NOT IN ( SELECT b.prenom
+                            FROM BigAnnuaire b
+                            WHERE b.age<=7);
+@p3
+
+
+--e) Requête avec not exists
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE NOT EXISTS ( SELECT *
+                       FROM BigAnnuaire b
+                       WHERE b.prenom = a.prenom
+                       AND b.age < a.age);
+@p3
+
+
+--f) Requête avec minus : les codes postaux des villes qui n'ont pas de centenaire.
+EXPLAIN plan FOR
+    SELECT cp
+    FROM BigAnnuaire a
+    minus
+    SELECT cp
+    FROM BigAnnuaire b
+    WHERE b.age>=100;
+@p3
+
+
+--g) requête avec where age >= ALL (…)
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE a.age >= ALL (SELECT b.age
+                       FROM BigAnnuaire b
+                       WHERE b.cp = 75000);
+@p3
+
+
+--h) Requete avec UNION, avec UNION ALL, avec une division, … (no request giving)
+
+
+
+-- Exercice 6: Documentation et Requetes sur le catalogue
+-- ======================================================
+COLUMN TABLE_NAME format A20
+SELECT TABLE_NAME, blocks, num_rows as cardinalite
+FROM user_tables;
+
+
+-- info sur la taille des index
+column table_name format A10
+column index_name format A10
+--
+select table_name, index_name, blevel, distinct_keys, leaf_blocks,
+avg_leaf_blocks_per_key, avg_data_blocks_per_key
+from user_indexes
+where table_name = 'ANNUAIRE';
+
+select table_name, index_name, blevel, distinct_keys, leaf_blocks,
+avg_leaf_blocks_per_key, avg_data_blocks_per_key
+from all_indexes
+where table_name = 'BIGANNUAIRE';
+
+
+--Décrit le domaine de chaque attribut
+COLUMN TABLE_NAME format A20
+    COLUMN column_name format A20
+    SELECT TABLE_NAME, column_name, utl_raw.cast_to_number(low_value) AS borneInf,  utl_raw.cast_to_number(high_value) AS borneSup, num_distinct, histogram
+    FROM user_tab_cols
+    WHERE data_type = 'NUMBER';
+-- Exercice 5: Autres Requetes 
+-- ===========================
+
+-- voir les requetes sur l'énoncé en ligne
+
+--a) Requête avec group by
+EXPLAIN plan FOR
+    SELECT age, COUNT(*)
+    FROM BigAnnuaire a
+    GROUP BY age;
+@p3
+
+
+--b) Requête avec group by having
+EXPLAIN plan FOR
+    SELECT age, COUNT(*)
+    FROM BigAnnuaire a
+    GROUP BY age
+    HAVING COUNT(*) > 200;
+@p3
+
+
+--c) Requête min max
+EXPLAIN plan FOR
+    SELECT MIN(cp), MAX(cp)
+    FROM BigAnnuaire a;
+@p3
+
+
+--d) Requête avec not in
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE a.prenom NOT IN ( SELECT b.prenom
+                            FROM BigAnnuaire b
+                            WHERE b.age<=7);
+@p3
+
+
+--e) Requête avec not exists
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE NOT EXISTS ( SELECT *
+                       FROM BigAnnuaire b
+                       WHERE b.prenom = a.prenom
+                       AND b.age < a.age);
+@p3
+
+
+--f) Requête avec minus : les codes postaux des villes qui n'ont pas de centenaire.
+EXPLAIN plan FOR
+    SELECT cp
+    FROM BigAnnuaire a
+    minus
+    SELECT cp
+    FROM BigAnnuaire b
+    WHERE b.age>=100;
+@p3
+
+
+--g) requête avec where age >= ALL (…)
+EXPLAIN plan FOR
+    SELECT a.nom, a.prenom
+    FROM BigAnnuaire a
+    WHERE a.age >= ALL (SELECT b.age
+                       FROM BigAnnuaire b
+                       WHERE b.cp = 75000);
+@p3
+
+
+--h) Requete avec UNION, avec UNION ALL, avec une division, … (no request giving)
+
+
+
+-- Exercice 6: Documentation et Requetes sur le catalogue
+-- ======================================================
+COLUMN TABLE_NAME format A20
+SELECT TABLE_NAME, blocks, num_rows as cardinalite
+FROM user_tables;
+
+
+-- info sur la taille des index
+column table_name format A10
+column index_name format A10
+--
+select table_name, index_name, blevel, distinct_keys, leaf_blocks,
+avg_leaf_blocks_per_key, avg_data_blocks_per_key
+from user_indexes
+where table_name = 'ANNUAIRE';
+
+select table_name, index_name, blevel, distinct_keys, leaf_blocks,
+avg_leaf_blocks_per_key, avg_data_blocks_per_key
+from all_indexes
+where table_name = 'BIGANNUAIRE';
+
+
+--Décrit le domaine de chaque attribut
+COLUMN TABLE_NAME format A20
+    COLUMN column_name format A20
+    SELECT TABLE_NAME, column_name, utl_raw.cast_to_number(low_value) AS borneInf,  utl_raw.cast_to_number(high_value) AS borneSup, num_distinct, histogram
+    FROM user_tab_cols
+    WHERE data_type = 'NUMBER';
+
+explain plan for select * from annuaire;
+@p4

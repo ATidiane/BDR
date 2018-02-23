@@ -18,7 +18,160 @@ C           5000        7
 F           5000        5
 BigJoueur   50000       13798
 
+Explanation:
+============
+coût(J) = page(J) * c
+
+c étant une constante < 1, si les pages sont contigues, ce qui est en notre
+cas en l'occurrence, c dépend des caractéristiques physique de la machine, donc
+d'une machine à l'autre, cette constante change en fonction de la puissance du
+CPU c'est à dire à quelle vitesse la machine est capable de lire les pages.
+
+Calcul de c:
+=============
+
+coût(BigJoueur) = page(BigJoueur) * c
+
+Pour avoir le nombre de pages, on exécute la requête suivante :
+
+Requête:
+========
+COLUMN TABLE_NAME format A20
+SELECT TABLE_NAME, blocks, num_rows as cardinalite
+FROM user_tables;
+
+SQL>
+TABLE_NAME		 BLOCKS CARDINALITE
+-------------------- ---------- -----------
+J			    244       50000
+F			     13        5000
+C			     20        5000
+
+Nb: La page correspond à la colonne BLOCKS
+===
+c = coût(Joueur) / page(Joueur) = 68 / 244 = 0.28
+
+====> Si on calcule manuellement les coûts, on aura donc:
+
+coût(J) = 244 * 0.28 = 68
+
+coût(C) = 20 * 0.28 = 5.6 donc environ...
+
+coût(F) = 13 * 0.28 = 3.64, environ...
+
 
 ===============================================================================
 =---------------------------------Exercice 1----------------------------------=
 ===============================================================================
+
+Requête R1:
+===========
+SELECT J.licence, C.nom
+FROM J, C
+WHERE J.cnum = C.cnum
+AND J.salaire > 10;
+
+Ecrivons en français ce que retourne la requête R1 ci-dessus:
+
+
+Question 1: Jointure par hachage
+===========
+
+    a)
+
+SQL>
+----------------------------------------------------------------
+| Id  | Operation	   | Name | Rows  | Bytes | Cost (%CPU)|
+----------------------------------------------------------------
+|   0 | SELECT STATEMENT   |	  | 50000 |  1269K|    76   (2)|
+|*  1 |  HASH JOIN	   |	  | 50000 |  1269K|    76   (2)|
+|   2 |   TABLE ACCESS FULL| C	  |  5000 | 60000 |	7   (0)|
+|*  3 |   TABLE ACCESS FULL| J	  | 50000 |   683K|    68   (0)|
+----------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - access("J"."CNUM"="C"."CNUM")
+   3 - filter("SALAIRE">10)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - (#keys=1) "C"."NOM"[VARCHAR2,30], "J"."LICENCE"[NUMBER,22]
+   2 - "C"."CNUM"[NUMBER,22], "C"."NOM"[VARCHAR2,30]
+   3 - "J"."LICENCE"[NUMBER,22], "J"."CNUM"[NUMBER,22]
+
+Dessin de l'arbre:
+==================
+
+                0
+                |
+                1
+            HASH JOIN 76 ?
+        |                 |
+        2                 3
+TABLE ACCESS FULL C (7)    TABLE ACCESS FULL J(68)
+
+Slide 19, cours 4:
+==================
+coût(sélection(salaire > 10 (C jointure J))) =
+coût(C jointure J) = coût(C) + coût(J) = 7 + 68 = 75
+
+Environ égal à = 75 + 1 = 76, avec 1 étant le coût du CPU.
+
+Inverse de l'ordre des jointures:
+=================================
+
+    b)
+
+Ordre C, BigJoueur J:
+=====================
+
+Ordre BigJoueur J, C:
+=====================
+SQL>
+-----------------------------------------------------------------------------
+| Id  | Operation	   | Name      | Rows  | Bytes |TempSpc| Cost (%CPU)|
+-----------------------------------------------------------------------------
+|   0 | SELECT STATEMENT   |	       | 50000 |   193M|       | 23370	 (1)|
+|*  1 |  HASH JOIN	   |	       | 50000 |   193M|   192M| 23370	 (1)|
+|   2 |   TABLE ACCESS FULL| BIGJOUEUR | 50000 |   192M|       | 13798	 (1)|
+|   3 |   TABLE ACCESS FULL| C	       |  5000 |   102K|       |     7	 (0)|
+-----------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - access("J"."CNUM"="C"."CNUM")
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - (#keys=1) "J"."CNUM"[NUMBER,22], "C"."CNUM"[NUMBER,22],
+       "J"."LICENCE"[NUMBER,22], "J"."PROFIL"[VARCHAR2,4000],
+       "J"."PRENOM"[VARCHAR2,30], "J"."SALAIRE"[NUMBER,22],
+       "J"."SPORT"[VARCHAR2,30], "C"."VILLE"[VARCHAR2,30],
+       "C"."NOM"[VARCHAR2,30], "C"."DIVISION"[NUMBER,22]
+   2 - "J"."LICENCE"[NUMBER,22], "J"."CNUM"[NUMBER,22],
+       "J"."PRENOM"[VARCHAR2,30], "J"."SALAIRE"[NUMBER,22],
+       "J"."SPORT"[VARCHAR2,30], "J"."PROFIL"[VARCHAR2,4000]
+   3 - "C"."CNUM"[NUMBER,22], "C"."NOM"[VARCHAR2,30],
+       "C"."DIVISION"[NUMBER,22], "C"."VILLE"[VARCHAR2,30]
+
+Dessin de l'arbre:
+==================
+
+                0
+                |
+                1
+               HASH (23370) ?
+            |       |
+            2       3
+TABLE ACCESS FULL   TABLE ACCESS FULL
+BIG JOUEUR (13798)  C (7)
+
+Une page c'est 8000 octets.
+23370 = 13798 + 7 + 9568(8000 octets * )
+192M * 0.05 = 9568
+
