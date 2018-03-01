@@ -1,0 +1,609 @@
+-- Compte rendu du TME 1-2 sur les plan d'exécution
+-- ================================================
+
+-- NOM, Prénom: BALDE, Ahmed Tidiane
+-- Numéro étudiant : 3502264
+
+
+-- Question préliminaire: Statistiques sur les tables
+-- ==================================================
+
+===============================================================================
+=---------------------------------Exercice 1----------------------------------=
+===============================================================================
+
+
+    ===========
+    =-Requête-=
+    ===========
+
+explain plan for
+    select * from Annuaire;
+@p3
+
+SQL>
+----------------------------------------------
+| Id  | Operation	  | Name     | Rows  |
+----------------------------------------------
+|   0 | SELECT STATEMENT  |	     |	2000 |
+|   1 |  TABLE ACCESS FULL| ANNUAIRE |	2000 |
+----------------------------------------------
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - "ANNUAIRE"."NOM"[VARCHAR2,30], "ANNUAIRE"."PRENOM"[VARCHAR2,30],
+       "ANNUAIRE"."AGE"[NUMBER,22], "ANNUAIRE"."CP"[NUMBER,22],
+       "ANNUAIRE"."TEL"[VARCHAR2,10], "ANNUAIRE"."PROFIL"[VARCHAR2,1500]
+       
+    ===========
+    =-Réponse-=
+    ===========
+@p4, ajoute le coût, @p5 ajoute les détails tel que le temps que prends
+la réquête à être exécuté.
+
+-- =================================
+-- Exercice 1 : Sélection avec index
+-- =================================
+
+    ===========
+--a)=-Requête-=
+    ===========
+
+explain plan for
+    select a.nom, a.prenom
+    from BigAnnuaire a
+    where a.age = 18;
+@p3
+
+SQL> 
+-----------------------------------------------------------
+| Id  | Operation		    | Name	  | Rows  |
+-----------------------------------------------------------
+|   0 | SELECT STATEMENT	    |		  |  2200 |
+|   1 |  TABLE ACCESS BY INDEX ROWID| BIGANNUAIRE |  2200 |
+|*  2 |   INDEX RANGE SCAN	    | INDEXAGE	  |  2200 |
+-----------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - access("A"."AGE"=18)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+   2 - "A".ROWID[ROWID,10]
+
+    ===========
+    =-Réponse-=
+    ===========
+listeRowIDs = IndexAge.getRowIDs(18)
+for (RowID r : listeRowIDs) {
+    p = Personne.lireTuple(r)
+    afficher(p.nom, p.prenom)
+}
+
+    ===========
+--d)=-Requête-=
+    ===========
+explain plan for
+   select a.nom, a.prenom
+   from BigAnnuaire a
+   where a.age < 70 and (a.cp = 93000 or a.cp = 75000);
+@p3
+
+SQL>
+------------------------------------------------------------
+| Id  | Operation		     | Name	   | Rows  |
+------------------------------------------------------------
+|   0 | SELECT STATEMENT	     |		   |   307 |
+|   1 |  INLIST ITERATOR	     |		   |	   |
+|*  2 |   TABLE ACCESS BY INDEX ROWID| BIGANNUAIRE |   307 |
+|*  3 |    INDEX RANGE SCAN	     | INDEXCP	   |   440 |
+------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   2 - filter("A"."AGE"<70)
+   3 - access("A"."CP"=75000 OR "A"."CP"=93000)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+   2 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+   3 - "A".ROWID[ROWID,10]
+       
+    ===========
+    =-Réponse-=
+    ===========
+
+for c in (75000, 93000):
+    listeRowIDs = IndexCP.getRowIDs(c)
+    for (r in listeRowIDs):
+        p = Personne.lireTuple(r)
+        if (p.getAge() < 70)
+           afficher(p.nom, p.prenom)
+
+
+    ===========
+--d)=-Requête-=
+    ===========
+explain plan for
+    select a.nom, a.prenom
+    from BigAnnuaire a
+    where a.age = 20 and a.cp = 13000 and a.nom like 'T%';
+@p3
+
+SQL>
+----------------------------------------------------------------
+| Id  | Operation			 | Name        | Rows  |
+----------------------------------------------------------------
+|   0 | SELECT STATEMENT		 |	       |     1 |
+|*  1 |  TABLE ACCESS BY INDEX ROWID	 | BIGANNUAIRE |     1 |
+|   2 |   BITMAP CONVERSION TO ROWIDS	 |	       |       |
+|   3 |    BITMAP AND			 |	       |       |
+|   4 |     BITMAP CONVERSION FROM ROWIDS|	       |       |
+|*  5 |      INDEX RANGE SCAN		 | INDEXCP     |   220 |
+|   6 |     BITMAP CONVERSION FROM ROWIDS|	       |       |
+|*  7 |      INDEX RANGE SCAN		 | INDEXAGE    |   220 |
+----------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - filter("A"."NOM" LIKE 'T%')
+   5 - access("A"."CP"=13000)
+   7 - access("A"."AGE"=20)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+   2 - "A".ROWID[ROWID,10]
+   3 - STRDEF[BM VAR, 10], STRDEF[BM VAR, 10], STRDEF[BM VAR, 32496]
+   4 - STRDEF[BM VAR, 10], STRDEF[BM VAR, 10], STRDEF[BM VAR, 32496]
+   5 - "A".ROWID[ROWID,10]
+   6 - STRDEF[BM VAR, 10], STRDEF[BM VAR, 10], STRDEF[BM VAR, 32496]
+   7 - "A".ROWID[ROWID,10]
+
+    ===========
+    =-Réponse-=
+    ===========
+
+setRowIDsAge = set(IndexAge.getRowIDs(20))
+setRowIDsCP = set(IndexCP.getRows(13000))
+setRowIDs = setRowIDsAge & setRowIDsCP
+for r in setRowIDs:
+    p = Personne.lireTuple(r)
+    if (p.nom).startswith('T'):
+        afficher(p.nom)
+
+
+===============================================================================
+=---------------------------------Exercice 2----------------------------------=
+===============================================================================
+A noter qu'il n'exécute pas vraiment la requête, il estime que le coût serait
+tel ou tel.
+
+Question a:
+===========
+
+Prédicat    Rows       Index Utilisé     Coût
+==============================================
+age <= 10   22250      Oui               22250
+age <= 30   66644      Oui               66793
+age <= 40   88867      Non               70893
+age <= 60   133K       Non               70893
+age <= 80   177K       Non               70893
+
+
+Question b:
+===========
+Oracle préfère evaluer la requête sans utiliser l'indexAge pour les trois
+derniers prédicats, car il ne sert à rien d'utiliser l'index pour accéder à la
+presque totalité de la base de donnée.
+Le coût de la lecture de toute la base est de 70893. A chaque fois oracle compare
+donc le cout d'accès s'il avait utilisé l'index qui est à peu près égal, un peu
+supérieur parfois au nombre de Rows.
+
+Question c:
+===========
+BETWEEN 50000 et N: avec N égal à exactement 81916
+
+
+===============================================================================
+=---------------------------------Exercice 3----------------------------------=
+===============================================================================
+
+Question a:
+===========
+
+Prédicat    Rows       Index Utilisé     Coût
+==============================================
+age <= 7    13333      Oui               13365
+age <= 7    13333      Non               70893
+
+
+Question b:
+===========
+
+Prédicat    Rows       Index Utilisé     Coût
+==============================================
+age > 19    180K       Oui               180K
+age > 19    180K       Non               70893
+
+
+Question c:
+===========
+
+index_combine(a indexCp indexAge) : force à utiliser plusieurs indexs ensemble.
+Contrairement à index(..., ...) qui en utilise un, le meilleur.
+
+
+===============================================================================
+=---------------------------------Exercice 4----------------------------------=
+===============================================================================
+Question a:
+===========
+SQL>
+---------------------------------------------------------
+| Id  | Operation		     | Name	| Rows	|
+---------------------------------------------------------
+|   0 | SELECT STATEMENT	     |		|    20 |
+|*  1 |  HASH JOIN		     |		|    20 |
+|   2 |   TABLE ACCESS BY INDEX ROWID| ANNUAIRE |    20 |
+|*  3 |    INDEX RANGE SCAN	     | INDEXAGE |    20 |
+|   4 |   TABLE ACCESS FULL	     | VILLE	|  1000 |
+---------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - access("A"."CP"="V"."CP")
+   3 - access("A"."AGE"=18)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - (#keys=1) "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30],
+       "V"."VILLE"[VARCHAR2,30]
+   2 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30],
+       "A"."CP"[NUMBER,22]
+   3 - "A".ROWID[ROWID,10]
+   4 - "V"."VILLE"[VARCHAR2,30], "V"."CP"[NUMBER,22]
+
+Dessin de l'arbre:
+==================
+                0
+                |
+                1
+            |       |
+            *2      4
+            |
+            *3 Age=18
+
+Pour le pseudo-code, il faut utiliser:
+======================================
+INDEX.getRowIds(condition)
+TABLE.getTuple(rowId)
+     .fullScan()
+
+
+Pseudo-code:
+============
+MAP<Int, List<(String), (String)> m
+foreach(r: INDEXAge.getRowIds(age=18)) {
+    t = ANNUAIRE.getTuple(r)
+    m.put(t.cp, (t.nom, t.prenom))
+    # peut s'écrire
+}
+foreach(v: VILLE.fullScan()) {
+    # m.get : obtenir les (noms, prenoms) de la MAP m, étape de jointure
+    foreach(p: m.get(v.cp)) {
+        affiche(p.nom, p.prenom, v.ville)
+    }
+}
+
+Il faut retenir qu'il faut séparer l'étape de la jointure m.get(v.cp) et
+l'étape de la création de la table de hachage (MAP)
+La jointure par hashage dit, avant d'évaluer un noeud, on descend en bas à
+gauche.
+
+On range les personnes qui ont 18 ans dans une table de hachage
+
+
+Question b:
+===========
+SQL>
+
+---------------------------------------------------------------------------------
+| Id  | Operation		     | Name	   | Rows  | Bytes | Cost (%CPU)|
+---------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT	     |		   |  2200 | 68200 |  2209   (1)|
+|*  1 |  HASH JOIN		     |		   |  2200 | 68200 |  2209   (1)|
+|   2 |   TABLE ACCESS FULL	     | VILLE	   |  1000 |  9000 |	 3   (0)|
+|   3 |   TABLE ACCESS BY INDEX ROWID| BIGANNUAIRE |  2200 | 48400 |  2206   (1)|
+|*  4 |    INDEX RANGE SCAN	     | INDEXAGE    |  2200 |	   |	 5   (0)|
+---------------------------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - access("A"."CP"="V"."CP")
+   4 - access("A"."AGE"=18)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - (#keys=1) "V"."VILLE"[VARCHAR2,30], "A"."NOM"[VARCHAR2,30],
+       "A"."PRENOM"[VARCHAR2,30]
+   2 - "V"."VILLE"[VARCHAR2,30], "V"."CP"[NUMBER,22]
+   3 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30],
+       "A"."CP"[NUMBER,22]
+   4 - "A".ROWID[ROWID,10]
+
+Dessin de l'arbre:
+==================
+
+                0
+                |
+                1
+            |       |
+            2       3
+      FULL VILLE    |
+                    4
+                    INDEX AGE
+
+Pseudo-code:
+============
+foreach(v: VILLE.fullscan()) {
+    ajouter(v.cp, v.ville) dans MAP
+}
+
+foreach(r: INDEXAGE.getRowIds(18)) {
+    t = BIGANNUAIRE.getTuple(r)
+    afficher(t.nom, t.prenom, MAP.get(t.cp))
+}
+
+On indexe toutes les villes (car il y'a plus de personnes ayant plus de 18 ans
+est bien plus grand que le nombre de villes) par leur code postale et ensuite
+pour chaque personne ayant 18 ans, on 
+
+
+Question c:
+===========
+SQL>
+------------------------------------------------------------
+| Id  | Operation		     | Name	   | Rows  |
+------------------------------------------------------------
+|   0 | SELECT STATEMENT	     |		   |  3647 |
+|   1 |  NESTED LOOPS		     |		   |	   |
+|   2 |   NESTED LOOPS		     |		   |  3647 |
+|*  3 |    TABLE ACCESS FULL	     | VILLE	   |	17 |
+|*  4 |    INDEX RANGE SCAN	     | INDEXCP	   |   220 |
+|   5 |   TABLE ACCESS BY INDEX ROWID| BIGANNUAIRE |   220 |
+------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   3 - filter("V"."POPULATION">=985000)
+   4 - access("A"."CP"="V"."CP")
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - (#keys=0) "V"."VILLE"[VARCHAR2,30], "A"."NOM"[VARCHAR2,30],
+       "A"."PRENOM"[VARCHAR2,30]
+   2 - (#keys=0) "V"."VILLE"[VARCHAR2,30], "A".ROWID[ROWID,10]
+   3 - "V"."VILLE"[VARCHAR2,30], "V"."CP"[NUMBER,22]
+   4 - "A".ROWID[ROWID,10]
+   5 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+
+
+Dessin de l'arbre:
+==================
+
+                0
+                |
+                1
+            |       |
+            2       5 BIGANNUAIRE BY ROWID
+         |     |
+ VILLE FULL  BIGANNUAIRE
+             INDEXCP   
+
+Pseudo-code:
+============
+foreach(v: VILLE.fullScan()) {
+    for (r: INDEXCP.getRowIDs(v.cp)) {
+         if (v.population >= 985000) {
+              t = BIGANNUAIRE.getTuple(r)
+              afficher(t.nom, t.prenom, v.ville)
+         }
+    }
+}
+
+Ce sont les étapes au niveau des feuilles qui sont les étapes englobantes.
+Pour chaque ville on fait une boucle qui contiendra une boucle pour récuperer
+les RowIDs des personnes, et pour chacun de ces derniers, on récupère le tuple
+correspondant si la condition v.population >= 985000 est respectée et ensuite on
+l'affiche.
+
+Préciser ce qu'on garde au niveau des attributs.
+
+===============================================================================
+=---------------------------------Exercice 5----------------------------------=
+===============================================================================
+
+Question a:
+===========
+SQL>
+--------------------------------------------------
+| Id  | Operation	      | Name	 | Rows  |
+--------------------------------------------------
+|   0 | SELECT STATEMENT      | 	 |   100 |
+|   1 |  HASH GROUP BY	      | 	 |   100 |
+|   2 |   INDEX FAST FULL SCAN| INDEXAGE |   220K|
+--------------------------------------------------
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - (#keys=1) "AGE"[NUMBER,22], COUNT(*)[22]
+   2 - "AGE"[NUMBER,22]
+
+
+Dessin de l'arbre:
+==================
+
+                0
+                |
+                1
+          HASH GROUP BY
+                |
+                2
+   INDEX FAST FULL SCAN INDEXAGE
+                
+
+
+Pseudo-code:
+============
+
+
+Question b:
+===========
+SQL>
+---------------------------------------------------
+| Id  | Operation	       | Name	  | Rows  |
+---------------------------------------------------
+|   0 | SELECT STATEMENT       |	  |	5 |
+|*  1 |  FILTER 	       |	  |	  |
+|   2 |   HASH GROUP BY        |	  |	5 |
+|   3 |    INDEX FAST FULL SCAN| INDEXAGE |   220K|
+---------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - filter(COUNT(*)>200)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - "AGE"[NUMBER,22], COUNT(*)[22]
+   2 - (#keys=1) "AGE"[NUMBER,22], COUNT(*)[22]
+   3 - "AGE"[NUMBER,22]
+
+Dessin de l'arbre:
+==================
+
+                0
+                |
+                1
+              FILTER
+                |
+                2
+          HASH GROUP BY
+                |
+                3
+  INDEX FAST FULL SCAN INDEXAGE
+                
+
+
+Pseudo-code:
+============
+
+
+Question c:
+===========
+SQL>
+-------------------------------------------------
+| Id  | Operation	      | Name	| Rows	|
+-------------------------------------------------
+|   0 | SELECT STATEMENT      | 	|     1 |
+|   1 |  SORT AGGREGATE       | 	|     1 |
+|   2 |   INDEX FAST FULL SCAN| INDEXCP |   220K|
+-------------------------------------------------
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - (#keys=0) MAX("CP")[22], MIN("CP")[22]
+   2 - "CP"[NUMBER,22]
+
+Dessin de l'arbre:
+==================
+
+                0
+                |
+                1
+         SORT AGGREGATE
+                |
+                2
+   INDEX FAST FULL SCAN INDEXCP
+                
+
+
+Pseudo-code:
+============
+
+
+Question d:
+===========
+SQL>
+------------------------------------------------------------
+| Id  | Operation		     | Name	   | Rows  |
+------------------------------------------------------------
+|   0 | SELECT STATEMENT	     |		   |  2444 |
+|*  1 |  HASH JOIN RIGHT ANTI	     |		   |  2444 |
+|   2 |   TABLE ACCESS BY INDEX ROWID| BIGANNUAIRE | 15533 |
+|*  3 |    INDEX RANGE SCAN	     | INDEXAGE    | 15533 |
+|   4 |   TABLE ACCESS FULL	     | BIGANNUAIRE |   220K|
+------------------------------------------------------------
+
+Predicate Information (identified by operation id):
+---------------------------------------------------
+
+   1 - access("A"."PRENOM"="B"."PRENOM")
+   3 - access("B"."AGE"<=7)
+
+Column Projection Information (identified by operation id):
+-----------------------------------------------------------
+
+   1 - (#keys=1) "A"."PRENOM"[VARCHAR2,30], "A"."NOM"[VARCHAR2,30]
+   2 - "B"."PRENOM"[VARCHAR2,30]
+   3 - "B".ROWID[ROWID,10]
+   4 - "A"."NOM"[VARCHAR2,30], "A"."PRENOM"[VARCHAR2,30]
+
+Dessin de l'arbre:
+==================
+
+                0
+                |
+                1
+       HASH JOIN RIGHT ANTI
+        |                 |
+        2                 4
+TABLE ACCESS BY INDEX     TABLE ACCESS FULL
+      ROWID
+        |
+        3
+INDEX RANGE SCAN
+                
+   INDEX FAST FULL SCAN INDEXCP
+                
+
+
+Pseudo-code:
+============
+
+
+
+===============================================================================
+=---------------------------------Exercice 6----------------------------------=
+===============================================================================
