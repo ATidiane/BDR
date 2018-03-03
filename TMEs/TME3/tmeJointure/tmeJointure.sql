@@ -54,10 +54,13 @@ explain plan for select * from F;
 explain plan for select * from BigJoueur;
 @p4
 
+<<<<<<< HEAD
 -- Pour obtenir le nombre de pages
 COLUMN TABLE_NAME format A20
 SELECT TABLE_NAME, blocks, num_rows as cardinalite
 FROM user_tables;
+=======
+>>>>>>> ef4c60d9528c9c283e5ca24bf509bd47e1176a72
 
 
 -- ============================================
@@ -74,6 +77,7 @@ explain plan for
   and salaire >10;
 @p4
 
+<<<<<<< HEAD
 SELECT /*+ ordered */ J.licence, C.nom
 FROM J, C 
 WHERE J.cnum = C.cnum
@@ -93,6 +97,8 @@ explain plan for SELECT /*+ ordered */ *
         FROM BigJoueur j, C
         WHERE j.cnum = c.cnum;
 @p4
+=======
+>>>>>>> ef4c60d9528c9c283e5ca24bf509bd47e1176a72
 
 -- Question 2)
 -- ===========

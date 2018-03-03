@@ -274,7 +274,11 @@ EXPLAIN plan FOR
 -- Exercice 6: Documentation et Requetes sur le catalogue
 -- ======================================================
 COLUMN TABLE_NAME format A20
+<<<<<<< HEAD
 SELECT TABLE_NAME, blocks, num_rows as cardinalite
+=======
+SELECT TABLE_NAME, blocks, num_rows 
+>>>>>>> ef4c60d9528c9c283e5ca24bf509bd47e1176a72
 FROM user_tables;
 
 
@@ -292,6 +296,7 @@ avg_leaf_blocks_per_key, avg_data_blocks_per_key
 from all_indexes
 where table_name = 'BIGANNUAIRE';
 
+<<<<<<< HEAD
 
 --Décrit le domaine de chaque attribut
 COLUMN TABLE_NAME format A20
@@ -611,3 +616,5 @@ COLUMN TABLE_NAME format A20
 
 explain plan for select * from annuaire;
 @p4
+=======
+>>>>>>> ef4c60d9528c9c283e5ca24bf509bd47e1176a72

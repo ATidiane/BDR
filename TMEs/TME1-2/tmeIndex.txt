@@ -319,6 +319,10 @@ On range les personnes qui ont 18 ans dans une table de hachage
 Question b:
 ===========
 SQL>
+<<<<<<< HEAD
+=======
+
+>>>>>>> ef4c60d9528c9c283e5ca24bf509bd47e1176a72
 ---------------------------------------------------------------------------------
 | Id  | Operation		     | Name	   | Rows  | Bytes | Cost (%CPU)|
 ---------------------------------------------------------------------------------
@@ -373,10 +377,15 @@ est bien plus grand que le nombre de villes) par leur code postale et ensuite
 pour chaque personne ayant 18 ans, on 
 
 
+<<<<<<< HEAD
 Question c: Jointure nested loops (différent de HASH)
 ===========
 Attention !!! Pas de HashMap ici.
 
+=======
+Question c:
+===========
+>>>>>>> ef4c60d9528c9c283e5ca24bf509bd47e1176a72
 SQL>
 ------------------------------------------------------------
 | Id  | Operation		     | Name	   | Rows  |
@@ -421,9 +430,14 @@ Dessin de l'arbre:
 Pseudo-code:
 ============
 foreach(v: VILLE.fullScan()) {
+<<<<<<< HEAD
     # Le filter se fait au niveau 3 donc, juste après le TABLE ACCESS FULLSCAN
     if (v.population >= 985000) {
          for (r: INDEXCP.getRowIDs(v.cp)) {
+=======
+    for (r: INDEXCP.getRowIDs(v.cp)) {
+         if (v.population >= 985000) {
+>>>>>>> ef4c60d9528c9c283e5ca24bf509bd47e1176a72
               t = BIGANNUAIRE.getTuple(r)
               afficher(t.nom, t.prenom, v.ville)
          }
@@ -609,6 +623,7 @@ Pseudo-code:
 ===============================================================================
 =---------------------------------Exercice 6----------------------------------=
 ===============================================================================
+<<<<<<< HEAD
 
 SELECT TABLE_NAME, blocks, num_rows as cardinalite
 FROM user_tables;
@@ -685,3 +700,5 @@ Slide 14 du cours 4:
 ====================
 coût(Annuaire) = page(Annuaire) * c
 c = coût(Annuaire) / page(Annuaire) = 170/622 = 0.27
+=======
+>>>>>>> ef4c60d9528c9c283e5ca24bf509bd47e1176a72
