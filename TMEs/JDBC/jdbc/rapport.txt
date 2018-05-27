@@ -1,0 +1,28 @@
+Intro
+------------------------------
+a) 
+getConnection(String url), 
+getConnection(String url, Properties info), 
+getConnection(String url, String user, String password)
+
+b) La méthode next sert à déplacer le curseur au n-uplet suivant
+
+c) setMaxRows(int max) est un équivalent de "limit" dans la requête sql
+
+d) CallableStatement et PreparedStatement
+
+3.1)
+ResultSetMetaData donne des informations sur les attributs (colonnes) du résultats 
+getColmnClassCount : retourne le nombre de colonnes du ResultSet 
+
+4.1) Informations sur la base de données 'capacités, driver etc...)
+connexion.getMetaData();
+méthode getColumns de l'interface: Récupère une description des colonnes d'une table qui 
+sont disponibles dans le catalogue spécifié.
+
+5.1)
+SELECT J.NOM, J.NATIONALITE, S.NOM, S.SPONSOR
+FROM JOUEUR J, SPONSOR S
+ORDER BY J.NOM;
+
+5.2) Parce que les deux tables sont situées sur deux bases différentes
